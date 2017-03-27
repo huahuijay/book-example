@@ -24,3 +24,18 @@ def _get_latest_source():
     current_commit = local("git log -n 1 --format=%H", capture=True)
     run(f'git reset --hard {current_commit}')
 
+
+def _update_settings(site_name):
+    settings_path = 'superlists/settings.py'
+    sed(settings_path, "DEBUG = True", "DEBUG = False")
+    sed(settings_path,
+        'ALLOWED_HOSTS =.+$',
+        f'ALLOWED_HOSTS = ["{site_name}"]'
+    )
+    secret_key_file = 'superlists/secret_key.py'
+    if not exists(secret_key_file):
+        chars = 'abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)'
+        key = ''.join(random.SystemRandom().choices(chars, k=50))
+        append(secret_key_file, f'SECRET_KEY = "{key}"')
+    append(settings_path, '\nfrom .secret_key import SECRET_KEY')
+
